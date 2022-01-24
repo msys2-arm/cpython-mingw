@@ -290,10 +290,19 @@ jobs:
 
   cross-llvm-mingw-test:
     needs: [cross-llvm-mingw]
-    runs-on: windows-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        arch: ['x86_64', 'i686']
+        arch: ['x86_64', 'i686', 'aarch64', 'armv7']
+        include:
+          - arch: x86_64
+            runner: windows-latest
+          - arch: i686
+            runner: windows-latest
+          - arch: aarch64
+            runner: ['Windows', 'ARM64']
+          - arch: armv7
+            runner: ['Windows', 'ARM64']
     steps:
       - uses: actions/download-artifact@v2
         with:
@@ -301,7 +310,9 @@ jobs:
 
       - name: 'Run tests'
         run: |
-          7z x install.zip
+          if (Test-Path ./_build) {rm -r -fo ./_build}
+          Add-Type -AssemblyName System.IO.Compression.FileSystem ;
+          [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\install.zip", "$PWD")
           ./_build/install/usr/local/bin/python3.exe -c "import sysconfig, pprint; pprint.pprint(sysconfig.get_config_vars())"
 
 
